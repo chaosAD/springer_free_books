@@ -61,7 +61,8 @@ __pycache__/
 build/
 develop-eggs/
 dist/
-downloads/
+downloads/*
+!downloads/table_*.xlsx
 eggs/
 .eggs/
 lib/
