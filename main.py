@@ -6,11 +6,7 @@ import pandas as pd
 from tqdm import tqdm
 from helper import *
 
-
-folder = os.path.join(os.getcwd(), 'downloads')
-
-if not os.path.exists(folder):
-    os.makedirs(folder)
+folder = create_relative_path_if_not_exist('downloads')
 
 table_url = 'https://resource-cms.springernature.com/springer-cms/rest/v1/content/17858272/data/v4'
 table = 'table_' + table_url.split('/')[-1] + '.xlsx'

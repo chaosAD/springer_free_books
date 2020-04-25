@@ -26,6 +26,11 @@ def compute_sha256(filename):
 #        print("{}: {}".format(filename, sha256_hash.hexdigest()))
     return sha256_hash.hexdigest()
 
+def create_relative_path_if_not_exist(relative_path):
+    path = os.path.join(os.getcwd(), relative_path)
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
 
 def download_book(url, bookname, data_frame, excel_filename, row, sha256_column):
     sha256 = getSHA256(data_frame.at[row, sha256_column])
@@ -34,16 +39,14 @@ def download_book(url, bookname, data_frame, excel_filename, row, sha256_column)
       print("+++ SHA256: {}".format(compute_sha256(bookname)))
     if not os.path.exists(bookname) or sha256 != compute_sha256(bookname):
         with requests.get(url, stream = True) as req:
-            try:
-                with open(bookname, 'wb') as out_file:
-                    shutil.copyfileobj(req.raw, out_file)
-                    out_file.close()
-                print("--- SHA256: {}".format(compute_sha256(bookname)))
-                data_frame.at[row, sha256_column] = compute_sha256(bookname)
-            except BaseException as e:
-                os.remove(bookname)
-                print("{}\n{} removed due to incomplete download.".format(e, bookname))
-                exit(-1)
+            path = create_relative_path_if_not_exist('tmp')
+            tmp_file = os.path.join(path, '_-_temp_file_-_.bak')
+            with open(tmp_file, 'wb') as out_file:
+                shutil.copyfileobj(req.raw, out_file)
+                out_file.close()
+            shutil.move(tmp_file, bookname)
+            print("--- SHA256: {}".format(compute_sha256(bookname)))
+            data_frame.at[row, sha256_column] = compute_sha256(bookname)
             try:
                 data_frame.to_excel(excel_filename)
             except IOError as e:
