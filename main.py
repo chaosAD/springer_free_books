@@ -17,8 +17,8 @@ table = 'table_' + table_url.split('/')[-1] + '.xlsx'
 if not os.path.exists(os.path.join(folder, table)):
     books = pd.read_excel(table_url)
     # Create new columns
-    books['PDF SHA256'] = '0'
-    books['EPUB SHA256'] = '0'
+    books['PDF SHA256'] = '-'
+    books['EPUB SHA256'] = '-'
     # Save table
     books.to_excel(os.path.join(folder, table))
 else:
@@ -34,19 +34,15 @@ for url, title, author, edition, isbn, category in tqdm(books[['OpenURL', 'Book 
 
     r = requests.get(url)
     new_url = r.url.replace('%2F','/').replace('/book/','/content/pdf/') + '.pdf'
-
     bookname = compose_bookname(title, author, edition, isbn)
     output_file = os.path.join(new_folder, bookname + '.pdf')
     print("file: {}".format(output_file.encode('ascii', 'ignore').decode('ascii')))
-
     download_book(new_url, output_file, books, os.path.join(folder, table), row, 'PDF SHA256')
 
     # Download EPUB version too if exists
     new_url = r.url.replace('%2F','/').replace('/book/','/download/epub/') + '.epub'
-
     output_file = os.path.join(new_folder, bookname + '.epub')
     print("file: {}".format(output_file.encode('ascii', 'ignore').decode('ascii')))
-
     request = requests.get(new_url, stream = True)
     if request.status_code == 200:
        download_book(new_url, output_file, books, os.path.join(folder, table), row, 'EPUB SHA256')
