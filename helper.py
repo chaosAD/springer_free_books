@@ -26,11 +26,13 @@ def compute_sha256(filename):
 #        print("{}: {}".format(filename, sha256_hash.hexdigest()))
     return sha256_hash.hexdigest()
 
+
 def create_relative_path_if_not_exist(relative_path):
     path = os.path.join(os.getcwd(), relative_path)
     if not os.path.exists(path):
         os.makedirs(path)
     return path
+
 
 def download_book(url, bookname, data_frame, excel_filename, row, sha256_column):
     sha256 = getSHA256(data_frame.at[row, sha256_column])

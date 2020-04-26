@@ -3,6 +3,7 @@
 import os
 import requests
 import pandas as pd
+import numpy as np
 from tqdm import tqdm
 from helper import *
 
@@ -10,23 +11,28 @@ folder = create_relative_path_if_not_exist('downloads')
 
 table_url = 'https://resource-cms.springernature.com/springer-cms/rest/v1/content/17858272/data/v4'
 table = 'table_' + table_url.split('/')[-1] + '.xlsx'
-if not os.path.exists(os.path.join(folder, table)):
+table_path = os.path.join(folder, table)
+if not os.path.exists(table_path):
     books = pd.read_excel(table_url)
     # Create new columns
     books['PDF SHA256'] = '-'
     books['EPUB SHA256'] = '-'
     # Save table
-    books.to_excel(os.path.join(folder, table))
+    books.to_excel(table_path)
 else:
-    books = pd.read_excel(os.path.join(folder, table), index_col=0, header=0)
+    books = pd.read_excel(table_path, index_col=0, header=0)
 
 
-row = 0
-for url, title, author, edition, isbn, category in tqdm(books[['OpenURL', 'Book Title', 'Author', 'Edition', 'Electronic ISBN', 'English Package Name']].values):
-    new_folder = os.path.join(folder, category)
-
-    if not os.path.exists(new_folder):
-        os.mkdir(new_folder)
+indices_array = np.arange(0, len(books.index))
+for row, url, title, author, edition, isbn, category in                     \
+                   tqdm(np.c_[indices_array, books[['OpenURL',              \
+                                                    'Book Title',           \
+                                                    'Author',               \
+                                                    'Edition',              \
+                                                    'Electronic ISBN',      \
+                                                    'English Package Name'  \
+                                                    ]].values]):
+    new_folder = create_relative_path_if_not_exist(os.path.join(folder, category))
 
     r = requests.get(url)
     new_url = r.url.replace('%2F','/').replace('/book/','/content/pdf/') + '.pdf'
@@ -42,7 +48,5 @@ for url, title, author, edition, isbn, category in tqdm(books[['OpenURL', 'Book 
     request = requests.get(new_url, stream = True)
     if request.status_code == 200:
        download_book(new_url, output_file, books, os.path.join(folder, table), row, 'EPUB SHA256')
-
-    row += 1
 
 print('\nFinish downloading.')
