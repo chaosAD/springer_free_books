@@ -2,10 +2,11 @@
 
 import os
 import requests
-import time
 import argparse
 import pandas as pd
 from helper import *
+
+MAX_FILENAME_LEN = 145
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-f', '--folder', help='folder to store downloads')
@@ -24,6 +25,9 @@ parser.add_argument(
     help='list of book indices to download'
 )
 parser.add_argument(
+    '-m','--max_fn_len', nargs=1, help='maximum length of a filename.'
+)
+parser.add_argument(
     '-v','--verbose', action='store_true', help='show more details'
 )
 
@@ -36,13 +40,13 @@ table = 'table_' + table_url.split('/')[-1] + '.xlsx'
 table_path = os.path.join(folder, table)
 if not os.path.exists(table_path):
     books = pd.read_excel(table_url)
-    # Save table
+    # Save table in the download folder
     books.to_excel(table_path)
 else:
     books = pd.read_excel(table_path, index_col=0, header=0)
 
 patches = []
-indices = ()
+indices = []
 invalid_categories = []
 if not args.pdf and not args.epub:
     args.pdf = args.epub = True
@@ -51,25 +55,26 @@ if args.pdf:
 if args.epub:
     patches.append({'url':'/download/epub/', 'ext':'.epub'})
 if args.book_index != None:
-    indices = remove_duplicate_tuples(
-        tuple([
-            i for i in map(int, args.book_index)
-            if 0 <= i < len(books.index)
-        ])
-    )
+    indices = [
+        i for i in map(int, args.book_index)
+        if 0 <= i < len(books.index)
+    ]
 if args.category != None:
     selected_indices, invalid_categories = indices_of_categories(
         args.category, books
     )
-    indices = remove_duplicate_tuples(indices + selected_indices)
+    indices = indices + selected_indices
 
 if len(indices) == 0 and (len(invalid_categories) > 0 or args.book_index):
     print_invalid_categories(invalid_categories)
     print('No book to download.')
     exit()
 
+max_fn_len = args.max_fn_len[0] if args.max_fn_len else MAX_FILENAME_LEN
+
+indices = list(set(indices))                        # Remove duplicates
 books = filter_books(books, sorted(indices))
-print_summary(books, args, invalid_categories)
-download_selected_books(books, folder, patches)
+print_summary(books, invalid_categories, args)
+download_books(books, folder, max_fn_len, patches)
 
 print('\nFinish downloading.')
