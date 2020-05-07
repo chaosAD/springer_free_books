@@ -16,7 +16,8 @@ jobs:
         python-version: 2.7
     - name: Install dependencies
       run: |
-        pip install -r requirements.txt
+        pip install -r requirements2x.txt
+        #pip install -r requirements.txt        
     - name: Test run
       run: |
         python main.py -i 23
